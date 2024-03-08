@@ -1,16 +1,14 @@
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, Input } from '@angular/core';
+import { TodoList } from '../todo-list.model';
 
 @Component({
   selector: 'app-todolist',
   standalone: true,
-  imports: [],
-  template: `
-    <p>
-      todolist works!
-    </p>
-  `,
+  imports: [CommonModule],
+  templateUrl: './todolist.component.html',
   styleUrl: './todolist.component.css'
 })
 export class TodolistComponent {
-
+  @Input() todoList: TodoList|null = null;
 }
