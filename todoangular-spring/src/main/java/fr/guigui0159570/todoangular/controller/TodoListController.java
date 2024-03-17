@@ -4,17 +4,18 @@ import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.guigui0159570.todoangular.model.TodoList;
-import fr.guigui0159570.todoangular.repository.TodoListRepository;
+import fr.guigui0159570.todoangular.service.TodoListService;
 import jakarta.validation.Valid;
 
 /**
@@ -24,16 +25,17 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/todolist")
+@CrossOrigin("*")
 public class TodoListController {
-    private final TodoListRepository todoListRepository;
+    private final TodoListService todoListService;
 
-    public TodoListController(TodoListRepository todoListRepository) {
-        this.todoListRepository = todoListRepository;
+    public TodoListController(TodoListService todoListService) {
+        this.todoListService = todoListService;
     }
 
     @GetMapping("/{idList}")
     public ResponseEntity<TodoList> getTodoListById(@PathVariable Long idList) {
-        Optional<TodoList> result = todoListRepository.findById(idList);
+        Optional<TodoList> result = todoListService.getTodoListById(idList);
 
         if (result.isPresent()) {
             return ResponseEntity.ok(result.get());
@@ -43,39 +45,33 @@ public class TodoListController {
     }
 
     @GetMapping("/all")
-    public Iterable<TodoList> getAllTodoList() {
-        return todoListRepository.findAll();
+    public ResponseEntity<Iterable<TodoList>> getAllTodoList() {
+        return ResponseEntity.ok(todoListService.getAllTodoList());
     }
 
     @PostMapping
-    public ResponseEntity<Object> addTodoList(@Valid @ModelAttribute TodoList todoList, BindingResult bindingResult) {
+    public ResponseEntity<Object> addTodoList(@Valid @RequestBody TodoList todoList, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
         } else {
-            todoListRepository.save(todoList);
-            return ResponseEntity.ok(todoList);
+            return ResponseEntity.ok(todoListService.addTodoList(todoList));
         }
     }
 
     @PatchMapping
-    public ResponseEntity<Object> updateTodoList(@Valid @ModelAttribute TodoList todoList, BindingResult bindingResult) {
+    public ResponseEntity<Object> updateTodoList(@Valid @RequestBody TodoList todoList, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
         } else {
-            if (todoList.getIdList() != null && todoListRepository.existsById(todoList.getIdList())) {
-                // C'est une mise à jour, pas une insertion.
-                todoListRepository.save(todoList);
+            if (todoListService.updateTodoList(todoList)) {
                 return ResponseEntity.ok(todoList);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
+            } else return ResponseEntity.badRequest().build();
         }
     }
 
     @DeleteMapping("/{idList}")
     public ResponseEntity<Object> deleteTodoListById(@PathVariable Long idList) {
-        if (todoListRepository.existsById(idList)) {
-            todoListRepository.deleteById(idList);
+        if (todoListService.deleteTodoListById(idList)) {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();
